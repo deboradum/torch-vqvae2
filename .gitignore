@@ -1,0 +1,6 @@
+__pycache__/
+data/
+results/
+results*
+!results/6_10000/9.png
+!results/6_10000/10.png
