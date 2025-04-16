@@ -13,13 +13,13 @@ class Quantizer(nn.Module):
         self.beta = beta
         self.e = nn.Embedding(k, d)
 
-        init_fn = nn.init.uniform(low=-1.0 / self.k, high=1.0 / self.k)
-        self.e.apply(init_fn)
+        self.e.weight.data.uniform_(-1.0 / k, 1.0 / k)
 
     def __call__(self, z):
         # (b, c, w, h) > (b, w, h, c) & flatten
         # z = z.transpose(0, 2, 3, 1)
-        z = z.contiguous()
+        # z = z.contiguous()
+        z = z.permute(0, 2, 3, 1).contiguous()
         z_flat = z.view(-1, self.d)
 
 
@@ -46,7 +46,9 @@ class Quantizer(nn.Module):
         perplexity = (-(e_mean + eps) * (e_mean + eps).log()).sum().exp()
 
         z_q = z + (z_q - z).detach()
+
         # z_q = mx.contiguous(z_q.transpose(0, 3, 1, 2))
-        z_q = z_q.contiguous()
+        # z_q = z_q.contiguous()
+        z_q = z_q.permute(0, 3, 1, 2).contiguous()
 
         return loss, z_q, perplexity

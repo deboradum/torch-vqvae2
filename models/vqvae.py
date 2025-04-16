@@ -48,14 +48,14 @@ class VQVAE2(nn.Module):
         dec_top = self.decoder_top(h_top)
 
         # Middle part of fig 2a.
-        h_btm = self.pre_quantization_conv_btm(torch.cat((h_btm, dec_top), dim=-1))
+        h_btm = self.pre_quantization_conv_btm(torch.cat((h_btm, dec_top), dim=1))
         btm_loss, e_btm, perplexity = self.quantizer_btm(h_btm)
 
         # Upsample e_top so it can be concatenated with e_btm before final decoder.
         e_top = self.upscale_top(e_top)
 
         # The decoder ...[] takes as input all levels of the quantized latent hierarchy
-        x_hat = self.decoder(torch.cat((e_btm, e_top), dim=-1))
+        x_hat = self.decoder(torch.cat((e_btm, e_top), dim=1))
 
         return x_hat, top_loss, btm_loss, perplexity
 
@@ -102,19 +102,19 @@ class VQVAE2_large(nn.Module):
         top_loss, e_top, perplexity = self.quantizer_top(h_top)
         dec_top = self.decoder_top(h_top)
 
-        h_mid = self.pre_quantization_conv_mid(torch.cat((h_mid, dec_top), dim=-1))
+        h_mid = self.pre_quantization_conv_mid(torch.cat((h_mid, dec_top), dim=1))
         mid_loss, e_mid, perplexity = self.quantizer_mid(h_mid)
 
         e_top = self.upscale_top(e_top)
 
-        dec_mid = self.decoder_mid(torch.cat((e_mid, e_top), dim=-1))
+        dec_mid = self.decoder_mid(torch.cat((e_mid, e_top), dim=1))
 
-        h_btm = self.pre_quantization_conv_btm(torch.cat((h_btm, dec_mid), dim=-1))
+        h_btm = self.pre_quantization_conv_btm(torch.cat((h_btm, dec_mid), dim=1))
         btm_loss, e_btm, perplexity = self.quantizer_btm(h_btm)
 
         e_mid = self.upscale_mid(e_mid)
 
-        x_hat = self.decoder(torch.cat((e_btm, e_mid), dim=-1))
-        # x_hat = self.decoder(torch.cat((e_btm, e_mid, e_top), dim=-1))
+        x_hat = self.decoder(torch.cat((e_btm, e_mid), dim=1))
+        # x_hat = self.decoder(torch.cat((e_btm, e_mid, e_top), dim=1))
 
         return x_hat, top_loss, mid_loss, btm_loss, perplexity

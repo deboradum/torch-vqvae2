@@ -11,39 +11,53 @@ from PIL import Image
 from models.vqvae import VQVAE2, VQVAE2_large
 from dataset import get_dataloaders
 
+device = torch.device(
+    "cuda"
+    if torch.cuda.is_available()
+    else "mps"
+    if torch.backends.mps.is_available()
+    else "cpu"
+)
+
 
 def save_snapshot(net, loader, path="results/0/"):
-    net.train(False)
+    net.eval()
     os.makedirs(path, exist_ok=True)
 
     ctr = 0
     for i, (batch, _) in enumerate(loader):
-        # Only do four batches
         if i > 4:
             return
-        batch = batch.permute(0, 2, 3, 1)
+        batch = batch.to(device)
 
-        outputs = net(batch)
-        x_hat, *losses, perplexity = outputs
+        with torch.no_grad():
+            outputs = net(batch)
+            x_hat, *losses, perplexity = outputs
 
-        x_hat = np.array(x_hat)
-        batch = np.array(batch)
+        batch = batch.cpu()
+        x_hat = x_hat.cpu()
 
-        for j in range(batch.shape[0]):
+        for j in range(batch.size(0)):
             orig = batch[j]
             recon = x_hat[j]
 
-            orig = np.clip(orig * 255, 0, 255).astype(np.uint8)
-            recon = np.clip(recon * 255, 0, 255).astype(np.uint8)
-
-            combined = np.concatenate([orig, recon], axis=1).astype(np.uint8)
-            img = Image.fromarray(combined)
+            # Handle single-channel or multi-channel images
+            if orig.size(0) == 1:
+                orig = orig.squeeze(0)
+                recon = recon.squeeze(0)
+                combined = np.concatenate([orig.numpy(), recon.numpy()], axis=1)
+                img = Image.fromarray(np.clip(combined * 255, 0, 255).astype(np.uint8))
+            else:
+                orig = orig.permute(1, 2, 0).numpy()
+                recon = recon.permute(1, 2, 0).numpy()
+                combined = np.concatenate([orig, recon], axis=1)
+                img = Image.fromarray(np.clip(combined * 255, 0, 255).astype(np.uint8))
 
             img.save(os.path.join(path, f"{ctr}.png"))
             ctr += 1
 
 
-def loss_fn(net, X):
+def loss_fn(net, X, metrics):
     outputs = net(X)
     x_hat, *losses, perplexity = outputs
     recon_loss = ((x_hat - X) ** 2).mean() / x_train_var
@@ -60,7 +74,7 @@ def get_avg(values):
     return sum(values) / len(values)
 
 
-def get_avg_metrics(window):
+def get_avg_metrics(window, metrics):
     total_loss = get_avg(metrics["total_loss"][-window:-1])
     recon_loss = get_avg(metrics["recon_loss"][-window:-1])
     perplexity = get_avg(metrics["perplexity"][-window:-1])
@@ -83,17 +97,18 @@ def train(
         metrics = {"total_loss": [], "recon_loss": [], "perplexity": []}
         net.train(True)
         for i, (X, _) in enumerate(train_loader):
+            X = X.to(device)
             # X = X.permute(0, 2, 3, 1)
 
             optimizer.zero_grad()
-            loss = loss_fn(net, X)
+            loss = loss_fn(net, X, metrics)
             loss.backward()
             optimizer.step()
 
             if i % log_every == 0 and i > 0:
                 took = time.perf_counter() - s
                 time_per_it = took / log_every
-                avg_total_loss, avg_recon_loss, avg_perplexity = get_avg_metrics(log_every)
+                avg_total_loss, avg_recon_loss, avg_perplexity = get_avg_metrics(log_every, metrics)
                 print(
                     f"Epoch {epoch}, step {i}/{len(train_loader)} - loss: {avg_total_loss:.5f}, recon_loss: {avg_recon_loss:.5f}, perplexity: {avg_perplexity:.5f}. Took {took:.3f}s ({time_per_it:.3f} s/it)"
                 )
@@ -119,21 +134,24 @@ def parse_args():
 
 
 if __name__ == "__main__":
+    print(f"Using device {device}")
+
     args = parse_args()
     metrics = {"total_loss": [], "recon_loss": [], "perplexity": []}
     if args.size == "small":
-        net = VQVAE2(128, 64, 2, 512, 64, 0.25)
+        net = VQVAE2(128, 64, 2, 512, 32, 0.25)
     elif args.size == "large":
         net = VQVAE2_large(128, 64, 2, 512, 64, 0.25)
     else:
         raise NotImplementedError("size argument should be 'small' or 'large'")
 
+    net.to(device)
     if args.load_checkpoint:
         net.load_state_dict(torch.load(args.load_checkpoint, weights_only=True))
 
-    optimizer = optim.Adam(lr=3e-4)
+    optimizer = optim.Adam(net.parameters(), lr=3e-4)
 
-    train_loader, test_loader, x_train_var = get_dataloaders(args.dataset, args.size, batch_size=2)
+    train_loader, test_loader, x_train_var = get_dataloaders(args.dataset, args.size, batch_size=4)
     train(
         epochs=10,
         net=net,
