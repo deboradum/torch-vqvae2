@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
     optimizer = optim.Adam(net.parameters(), lr=3e-4)
 
-    train_loader, test_loader, x_train_var = get_dataloaders(args.dataset, args.size, batch_size=4)
+    train_loader, test_loader, x_train_var = get_dataloaders(args.dataset, args.size, batch_size=8)
     train(
         epochs=10,
         net=net,
