@@ -124,7 +124,9 @@ def get_loaders_geoGuessr(
         for split in ["train", "val"]
     }
 
-    x_train_var = compute_dataset_variance(loaders["train"])
+    # Hardcode x_train_var because it takes a while to compute.
+    # x_train_var = compute_dataset_variance(loaders["train"])
+    x_train_var = 0.05026310263180217
 
     return loaders["train"], loaders["val"], x_train_var
 
