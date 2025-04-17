@@ -60,6 +60,22 @@ class GeoGuessrDataset(Dataset):
         return image, target
 
 
+def compute_dataset_variance(data_loader):
+    pixel_sum = 0.0
+    pixel_squared_sum = 0.0
+    pixel_count = 0
+
+    for images, _ in data_loader:
+        images = images.view(-1)
+        pixel_sum += images.sum().item()
+        pixel_squared_sum += (images**2).sum().item()
+        pixel_count += images.numel()
+
+    mean = pixel_sum / pixel_count
+    variance = (pixel_squared_sum / pixel_count) - (mean**2)
+    return variance
+
+
 def get_loaders_geoGuessr(
     batch_size,
     size,
@@ -108,7 +124,9 @@ def get_loaders_geoGuessr(
         for split in ["train", "val"]
     }
 
-    return loaders["train"], loaders["val"], 1
+    x_train_var = compute_dataset_variance(loaders["train"])
+
+    return loaders["train"], loaders["val"], x_train_var
 
 
 def get_dataloaders(dataset, size, batch_size):
