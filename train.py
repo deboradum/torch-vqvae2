@@ -116,7 +116,7 @@ def train(
                 s = time.perf_counter()
 
         if epoch % save_every == 0:
-            model_path = f"{output_dir}/checkpoint_epoch_{epoch}.npz"
+            model_path = f"{output_dir}/checkpoint_epoch_{epoch}.pth"
             print(f"Saving model in {model_path}")
             torch.save(net.state_dict(), model_path)
 
