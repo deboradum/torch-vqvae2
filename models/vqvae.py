@@ -37,6 +37,14 @@ class VQVAE2(nn.Module):
         self.decoder = Decoder(2 * d, encoder_h_dim, 3, res_h_dim, num_res_layers)
 
     def __call__(self, x):
+        e, top_loss, btm_loss, perplexity = self.encode(x)
+
+        # The decoder ...[] takes as input all levels of the quantized latent hierarchy
+        x_hat = self.decoder(e)
+
+        return x_hat, top_loss, btm_loss, perplexity
+
+    def encode(self, x):
         # the encoder network first transforms and downsamples the image by a factor of 4 ...
         h_btm = self.encoder_btm(x)
         # ... Another stack of residual blocks then further scales down the representations by a factor of two.
@@ -54,10 +62,9 @@ class VQVAE2(nn.Module):
         # Upsample e_top so it can be concatenated with e_btm before final decoder.
         e_top = self.upscale_top(e_top)
 
-        # The decoder ...[] takes as input all levels of the quantized latent hierarchy
-        x_hat = self.decoder(torch.cat((e_btm, e_top), dim=1))
+        e = torch.cat((e_btm, e_top), dim=1)
 
-        return x_hat, top_loss, btm_loss, perplexity
+        return e, top_loss, btm_loss, perplexity
 
 
 # Three layer VQVAE
@@ -94,6 +101,13 @@ class VQVAE2_large(nn.Module):
         self.decoder = Decoder_Large(2 * d, encoder_h_dim, 3, res_h_dim, num_res_layers)
 
     def __call__(self, x):
+        e, top_loss, mid_loss, btm_loss, perplexity = self.encode(x)
+
+        x_hat = self.decoder(e)
+
+        return x_hat, top_loss, mid_loss, btm_loss, perplexity
+
+    def encode(self, x):
         h_btm = self.encoder_btm(x)
         h_mid = self.encoder_mid(h_btm)
         h_top = self.encoder_top(h_mid)
@@ -114,9 +128,6 @@ class VQVAE2_large(nn.Module):
 
         e_mid = self.upscale_mid(e_mid)
 
-        x_hat = self.decoder(torch.cat((e_btm, e_mid), dim=1))
+        e = torch.cat((e_btm, e_mid), dim=1)
 
-        # e_top = self.upscale_top2(e_top)
-        # x_hat = self.decoder(torch.cat((e_btm, e_mid, e_top), dim=1))  # I think I prefer the above decoder, for performance does not matter that much
-
-        return x_hat, top_loss, mid_loss, btm_loss, perplexity
+        return e, top_loss, mid_loss, btm_loss, perplexity
