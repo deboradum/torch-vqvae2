@@ -7,7 +7,7 @@ import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
 from PIL import Image
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, random_split
 
 
 def get_dataloaders_cifar(batch_size):
@@ -37,30 +37,35 @@ def get_dataloaders_cifar(batch_size):
     return train_loader, test_loader, x_train_var
 
 
-def get_loaders_imagenet(batch_size):
+def get_loaders_Caltech101(batch_size):
     transform = transforms.Compose(
         [
-            transforms.ToTensor(),
-            # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
             transforms.Resize((1024, 1024)),
+            transforms.Lambda(lambda x: x.convert("RGB")),
+            transforms.ToTensor(),
         ]
     )
 
-    train_dataset = datasets.ImageNet(
-        root="./data", train=True, download=True, transform=transform
-    )
-    x_train_var = np.var(train_dataset.data / 255.0)
-
-    test_dataset = datasets.ImageNet(
-        root="./data", train=False, download=True, transform=transform
+    full_dataset = datasets.Caltech101(
+        root="./data", download=True, transform=transform
     )
 
-    train_loader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, num_workers=2
-    )
-    test_loader = DataLoader(
-        test_dataset, batch_size=batch_size, shuffle=False, num_workers=2
-    )
+    train_size = int(0.8 * len(full_dataset))
+    test_size = len(full_dataset) - train_size
+    train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+
+    print("Computing train var")
+    x_train_var = 0.0
+    count = 0
+    for images, _ in train_loader:
+        images = images.view(images.size(0), -1) / 255.0
+        x_train_var += images.var(dim=1).sum().item()
+        count += images.size(0)
+    x_train_var /= count
+    print("train var:", x_train_var)
 
     return train_loader, test_loader, x_train_var
 
@@ -165,7 +170,7 @@ def get_dataloaders(dataset, size, batch_size):
         return get_dataloaders_cifar(batch_size)
     elif dataset == "geoguessr":
         return get_loaders_geoGuessr(batch_size, size)
-    elif dataset == "iamgenet":
-        return get_loaders_imagenet(batch_size)
+    elif dataset == "caltech":
+        return get_loaders_Caltech101(batch_size)
     else:
         raise NotImplementedError
