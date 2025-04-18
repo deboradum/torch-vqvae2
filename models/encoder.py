@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-from models.residual import ResidualStack
+from .residual import ResidualStack
 
 
 class Top_encoder(nn.Module):

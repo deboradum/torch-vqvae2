@@ -2,15 +2,15 @@ import torch
 
 import torch.nn as nn
 
-from models.quantizer import Quantizer
-from models.encoder import (
+from .quantizer import Quantizer
+from .encoder import (
     Top_encoder,
     Bottom_encoder,
     Top_encoder_large,
     Middle_encoder_large,
     Bottom_encoder_large,
 )
-from models.decoder import (
+from .decoder import (
     Top_decoder,
     Top_decoder_large,
     Decoder,
@@ -115,6 +115,8 @@ class VQVAE2_large(nn.Module):
         e_mid = self.upscale_mid(e_mid)
 
         x_hat = self.decoder(torch.cat((e_btm, e_mid), dim=1))
-        # x_hat = self.decoder(torch.cat((e_btm, e_mid, e_top), dim=1))
+
+        # e_top = self.upscale_top2(e_top)
+        # x_hat = self.decoder(torch.cat((e_btm, e_mid, e_top), dim=1))  # I think I prefer the above decoder, for performance does not matter that much
 
         return x_hat, top_loss, mid_loss, btm_loss, perplexity
