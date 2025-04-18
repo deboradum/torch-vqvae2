@@ -14,7 +14,7 @@ class Top_encoder(nn.Module):
             ResidualStack(h_dim, h_dim, res_h_dim, num_res_layers),
         )
 
-    def __call__(self, x):
+    def forward(self, x):
         return self.layers(x)
 
 
@@ -31,7 +31,7 @@ class Bottom_encoder(nn.Module):
             ResidualStack(h_dim, h_dim, res_h_dim, num_res_layers),
         )
 
-    def __call__(self, x):
+    def forward(self, x):
         return self.layers(x)
 
 
@@ -46,7 +46,7 @@ class Top_encoder_large(nn.Module):
             ResidualStack(h_dim, h_dim, res_h_dim, num_res_layers),
         )
 
-    def __call__(self, x):
+    def forward(self, x):
         return self.layers(x)
 
 
@@ -63,7 +63,7 @@ class Middle_encoder_large(nn.Module):
             ResidualStack(h_dim, h_dim, res_h_dim, num_res_layers),
         )
 
-    def __call__(self, x):
+    def forward(self, x):
         return self.layers(x)
 
 
@@ -82,5 +82,5 @@ class Bottom_encoder_large(nn.Module):
             ResidualStack(h_dim, h_dim, res_h_dim, num_res_layers),
         )
 
-    def __call__(self, x):
+    def forward(self, x):
         return self.layers(x)

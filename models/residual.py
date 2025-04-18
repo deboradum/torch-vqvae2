@@ -12,7 +12,7 @@ class ResidualLayer(nn.Module):
             nn.ReLU(),
         )
 
-    def __call__(self, x):
+    def forward(self, x):
         return x + self.layers(x)
 
 
@@ -24,7 +24,7 @@ class ResidualStack(nn.Module):
         )
         self.final = nn.ReLU()
 
-    def __call__(self, x):
+    def forward(self, x):
         x = self.stack(x)
 
         return self.final(x)

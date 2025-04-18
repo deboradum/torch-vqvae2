@@ -15,7 +15,7 @@ class Quantizer(nn.Module):
 
         self.e.weight.data.uniform_(-1.0 / k, 1.0 / k)
 
-    def __call__(self, z):
+    def forward(self, z):
         # (b, c, w, h) > (b, w, h, c) & flatten
         # z = z.transpose(0, 2, 3, 1)
         # z = z.contiguous()

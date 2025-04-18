@@ -36,7 +36,7 @@ class VQVAE2(nn.Module):
 
         self.decoder = Decoder(2 * d, encoder_h_dim, 3, res_h_dim, num_res_layers)
 
-    def __call__(self, x):
+    def forward(self, x):
         e, top_loss, btm_loss, perplexity = self.encode(x)
 
         # The decoder ...[] takes as input all levels of the quantized latent hierarchy
@@ -100,7 +100,7 @@ class VQVAE2_large(nn.Module):
 
         self.decoder = Decoder_Large(2 * d, encoder_h_dim, 3, res_h_dim, num_res_layers)
 
-    def __call__(self, x):
+    def forward(self, x):
         e, top_loss, mid_loss, btm_loss, perplexity = self.encode(x)
 
         x_hat = self.decoder(e)

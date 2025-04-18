@@ -13,7 +13,7 @@ class Top_decoder(nn.Module):
             nn.ConvTranspose2d(h_dim, out_dim, kernel_size=4, stride=2, padding=1),
         )
 
-    def __call__(self, x):
+    def forward(self, x):
         return self.inv_conv_layers(x)
 
 class Decoder(nn.Module):
@@ -28,7 +28,7 @@ class Decoder(nn.Module):
             nn.ConvTranspose2d(h_dim // 2, out_dim, kernel_size=4, stride=2, padding=1),
         )
 
-    def __call__(self, x):
+    def forward(self, x):
         return self.inv_conv_layers(x)
 
 class Decoder_Large(nn.Module):
@@ -45,7 +45,7 @@ class Decoder_Large(nn.Module):
             nn.ConvTranspose2d(h_dim // 2, out_dim, kernel_size=4, stride=2, padding=1),
         )
 
-    def __call__(self, x):
+    def forward(self, x):
         return self.inv_conv_layers(x)
 
 
@@ -60,5 +60,5 @@ class Top_decoder_large(nn.Module):
             nn.ConvTranspose2d(h_dim, out_dim, kernel_size=4, stride=2, padding=1),
         )
 
-    def __call__(self, x):
+    def forward(self, x):
         return self.inv_conv_layers(x)
