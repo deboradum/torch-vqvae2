@@ -146,12 +146,15 @@ if __name__ == "__main__":
         raise NotImplementedError("size argument should be 'small' or 'large'")
 
     net.to(device)
+    print("Loading weights")
     if args.load_checkpoint:
         net.load_state_dict(torch.load(args.load_checkpoint, weights_only=True))
 
     optimizer = optim.Adam(net.parameters(), lr=3e-4)
 
+    print("Getting dataloaders")
     train_loader, test_loader, x_train_var = get_dataloaders(args.dataset, args.size, batch_size=8)
+
     train(
         epochs=10,
         net=net,
