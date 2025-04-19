@@ -37,14 +37,17 @@ class VQVAE2(nn.Module):
         self.decoder = Decoder(2 * d, encoder_h_dim, 3, res_h_dim, num_res_layers)
 
     def forward(self, x):
-        e, top_loss, btm_loss, perplexity = self.encode(x)
+        e, top_loss, btm_loss, perplexity, embeddings = self.encode(x)
 
         # The decoder ...[] takes as input all levels of the quantized latent hierarchy
         x_hat = self.decoder(e)
 
-        return x_hat, top_loss, btm_loss, perplexity
+        return x_hat, top_loss, btm_loss, perplexity, embeddings
 
     def encode(self, x):
+        B = x.shape[0]
+        D = self.quantizer_top.d
+
         # the encoder network first transforms and downsamples the image by a factor of 4 ...
         h_btm = self.encoder_btm(x)
         # ... Another stack of residual blocks then further scales down the representations by a factor of two.
@@ -52,19 +55,30 @@ class VQVAE2(nn.Module):
 
         # Top part of fig 2a.
         h_top = self.pre_quantization_conv_top(h_top)
-        top_loss, e_top, perplexity = self.quantizer_top(h_top)
+        top_loss, e_top, perplexity, top_embeddings = self.quantizer_top(h_top)
         dec_top = self.decoder_top(h_top)
+        T_top = e_top.shape[2] * e_top.shape[3]
 
         # Middle part of fig 2a.
         h_btm = self.pre_quantization_conv_btm(torch.cat((h_btm, dec_top), dim=1))
-        btm_loss, e_btm, perplexity = self.quantizer_btm(h_btm)
+        btm_loss, e_btm, perplexity, btm_embeddings = self.quantizer_btm(h_btm)
+        T_btm = e_btm.shape[2] * e_btm.shape[3]
 
         # Upsample e_top so it can be concatenated with e_btm before final decoder.
         e_top = self.upscale_top(e_top)
 
         e = torch.cat((e_btm, e_top), dim=1)
 
-        return e, top_loss, btm_loss, perplexity
+        btm_embeddings = btm_embeddings.view(B, T_btm, D)
+        top_embeddings = top_embeddings.view(B, T_top, D)
+
+        return (
+            e,
+            top_loss,
+            btm_loss,
+            perplexity,
+            torch.cat([btm_embeddings, top_embeddings], dim=1),
+        )
 
 
 # Three layer VQVAE
@@ -101,33 +115,50 @@ class VQVAE2_large(nn.Module):
         self.decoder = Decoder_Large(2 * d, encoder_h_dim, 3, res_h_dim, num_res_layers)
 
     def forward(self, x):
-        e, top_loss, mid_loss, btm_loss, perplexity = self.encode(x)
+        e, top_loss, mid_loss, btm_loss, perplexity, embeddings = self.encode(x)
 
         x_hat = self.decoder(e)
 
-        return x_hat, top_loss, mid_loss, btm_loss, perplexity
+        return x_hat, top_loss, mid_loss, btm_loss, perplexity, embeddings
 
     def encode(self, x):
+        B = x.shape[0]
+        D = self.quantizer_top.d
+
         h_btm = self.encoder_btm(x)
         h_mid = self.encoder_mid(h_btm)
         h_top = self.encoder_top(h_mid)
 
         h_top = self.pre_quantization_conv_top(h_top)
-        top_loss, e_top, perplexity = self.quantizer_top(h_top)
+        top_loss, e_top, perplexity, top_embeddings = self.quantizer_top(h_top)
         dec_top = self.decoder_top(h_top)
+        T_top = e_top.shape[2] * e_top.shape[3]
 
         h_mid = self.pre_quantization_conv_mid(torch.cat((h_mid, dec_top), dim=1))
-        mid_loss, e_mid, perplexity = self.quantizer_mid(h_mid)
+        mid_loss, e_mid, perplexity, mid_embeddings = self.quantizer_mid(h_mid)
+        T_mid = e_mid.shape[2] * e_mid.shape[3]
 
         e_top = self.upscale_top(e_top)
 
         dec_mid = self.decoder_mid(torch.cat((e_mid, e_top), dim=1))
 
         h_btm = self.pre_quantization_conv_btm(torch.cat((h_btm, dec_mid), dim=1))
-        btm_loss, e_btm, perplexity = self.quantizer_btm(h_btm)
+        btm_loss, e_btm, perplexity, btm_embeddings = self.quantizer_btm(h_btm)
+        T_btm = e_btm.shape[2] * e_btm.shape[3]
 
         e_mid = self.upscale_mid(e_mid)
 
         e = torch.cat((e_btm, e_mid), dim=1)
 
-        return e, top_loss, mid_loss, btm_loss, perplexity
+        btm_embeddings = btm_embeddings.view(B, T_btm, D)
+        mid_embeddings = mid_embeddings.view(B, T_mid, D)
+        top_embeddings = top_embeddings.view(B, T_top, D)
+
+        return (
+            e,
+            top_loss,
+            mid_loss,
+            btm_loss,
+            perplexity,
+            torch.cat([btm_embeddings, mid_embeddings, top_embeddings], dim=1),
+        )

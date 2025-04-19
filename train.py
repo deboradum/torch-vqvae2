@@ -32,7 +32,7 @@ def save_snapshot(net, loader, path="results/0/"):
 
         with torch.no_grad():
             outputs = net(batch)
-            x_hat, *losses, perplexity = outputs
+            x_hat, *losses, perplexity, _ = outputs
 
         batch = batch.cpu()
         x_hat = x_hat.cpu()
@@ -59,7 +59,7 @@ def save_snapshot(net, loader, path="results/0/"):
 
 def loss_fn(net, X, metrics):
     outputs = net(X)
-    x_hat, *losses, perplexity = outputs
+    x_hat, *losses, perplexity, _ = outputs
     recon_loss = ((x_hat - X) ** 2).mean() / x_train_var
     loss = recon_loss + sum(losses)
 

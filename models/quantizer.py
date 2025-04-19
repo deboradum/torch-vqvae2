@@ -35,7 +35,8 @@ class Quantizer(nn.Module):
         #            { 0 else
         closest_indices = dists.argmin(dim=1)
         one_hot = F.one_hot(closest_indices, num_classes=self.k).float()
-        z_q = self.e(closest_indices).reshape(*z.shape)
+        embeddings = self.e(closest_indices)
+        z_q = embeddings.reshape(*z.shape)
 
         codebook_loss = ((z_q.detach() - z) ** 2).mean()
         commitment_loss = self.beta * ((z_q - z.detach()) ** 2).mean()
@@ -51,4 +52,4 @@ class Quantizer(nn.Module):
         # z_q = z_q.contiguous()
         z_q = z_q.permute(0, 3, 1, 2).contiguous()
 
-        return loss, z_q, perplexity
+        return loss, z_q, perplexity, embeddings
