@@ -148,7 +148,7 @@ if __name__ == "__main__":
     net.to(device)
     print("Loading weights")
     if args.load_checkpoint:
-        net.load_state_dict(torch.load(args.load_checkpoint, weights_only=True))
+        net.load_state_dict(torch.load(args.load_checkpoint, weights_only=True, map_location=device))
 
     optimizer = optim.Adam(net.parameters(), lr=3e-4)
 
