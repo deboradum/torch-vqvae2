@@ -160,5 +160,5 @@ class VQVAE2_large(nn.Module):
             mid_loss,
             btm_loss,
             perplexity,
-            torch.cat([btm_embeddings, mid_embeddings, top_embeddings], dim=1),
+            torch.cat([mid_embeddings, top_embeddings], dim=1),
         )
