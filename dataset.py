@@ -40,7 +40,7 @@ def get_dataloaders_cifar(batch_size):
 def get_loaders_Caltech101(batch_size):
     transform = transforms.Compose(
         [
-            transforms.Resize((1024, 1024)),
+            transforms.Resize((512, 512)),
             transforms.Lambda(lambda x: x.convert("RGB")),
             transforms.ToTensor(),
         ]
@@ -130,7 +130,7 @@ def get_loaders_geoGuessr(
         transform = transforms.Compose(
             [
                 transforms.RandomCrop((img_size, img_size)),
-                transforms.Resize((1024, 1024)),
+                transforms.Resize((512, 512)),
                 transforms.ToTensor(),
                 # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
                 transforms.RandomHorizontalFlip(),
@@ -165,6 +165,40 @@ def get_loaders_geoGuessr(
     return loaders["train"], loaders["val"], x_train_var
 
 
+def get_loaders_imagenet256(batch_size, data_dir="data/imagenet256"):
+    transform = transforms.Compose(
+        [
+            transforms.Resize((256, 256)),
+            transforms.ToTensor(),
+            transforms.RandomHorizontalFlip(),
+        ]
+    )
+
+    full_dataset = datasets.ImageFolder(root=data_dir, transform=transform)
+
+    train_size = int(0.8 * len(full_dataset))
+    val_test_size = len(full_dataset) - train_size
+    val_size = val_test_size // 2
+    test_size = val_test_size - val_size
+
+    train_dataset, val_test_dataset = random_split(
+        full_dataset, [train_size, val_test_size]
+    )
+    val_dataset, test_dataset = random_split(val_test_dataset, [val_size, test_size])
+
+    train_loader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=4
+    )
+    val_loader = DataLoader(
+        val_dataset, batch_size=batch_size, shuffle=False, num_workers=2
+    )
+
+    # todo
+    x_train_var = 1.0472832505104722e-05
+
+    return train_loader, val_loader, x_train_var
+
+
 def get_dataloaders(dataset, size, batch_size):
     if dataset == "CIFAR10":
         return get_dataloaders_cifar(batch_size)
@@ -172,5 +206,10 @@ def get_dataloaders(dataset, size, batch_size):
         return get_loaders_geoGuessr(batch_size, size)
     elif dataset == "caltech":
         return get_loaders_Caltech101(batch_size)
+    elif dataset == "imagenet256":
+        return get_loaders_imagenet256(
+            batch_size,
+            data_dir="/Users/personal/Desktop/ivq-transformer/data/imagenet256",
+        )
     else:
         raise NotImplementedError

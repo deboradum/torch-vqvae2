@@ -26,7 +26,7 @@ def save_snapshot(net, loader, path="results/0/"):
 
     ctr = 0
     for i, (batch, _) in enumerate(loader):
-        if i > 4:
+        if i > 1:
             return
         batch = batch.to(device)
 
@@ -139,9 +139,9 @@ if __name__ == "__main__":
     args = parse_args()
     metrics = {"total_loss": [], "recon_loss": [], "perplexity": []}
     if args.size == "small":
-        net = VQVAE2(128, 64, 2, 512, 32, 0.25)
+        net = VQVAE2(128, 64, 2, 1024, 64, 0.25)
     elif args.size == "large":
-        net = VQVAE2_large(128, 64, 2, 512, 64, 0.25)
+        net = VQVAE2_large(128, 64, 2, 1024, 64, 0.25)
     else:
         raise NotImplementedError("size argument should be 'small' or 'large'")
 
@@ -153,10 +153,11 @@ if __name__ == "__main__":
     optimizer = optim.Adam(net.parameters(), lr=3e-4)
 
     print("Getting dataloaders")
-    train_loader, test_loader, x_train_var = get_dataloaders(args.dataset, args.size, batch_size=8)
+    train_loader, test_loader, x_train_var = get_dataloaders(args.dataset, args.size, batch_size=32)
 
+    print("Starting training")
     train(
-        epochs=10,
+        epochs=20,
         net=net,
         optimizer=optimizer,
         train_loader=train_loader,
