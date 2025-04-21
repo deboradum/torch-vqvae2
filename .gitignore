@@ -2,5 +2,7 @@ __pycache__/
 data/
 results/
 results*
-!results/6_10000/9.png
-!results/6_10000/10.png
+!results/8_6000/31.png
+!results/8_6000/20.png
+imagenet*
+.DS_Store
