@@ -193,8 +193,7 @@ def get_loaders_imagenet256(batch_size, data_dir="data/imagenet256"):
         val_dataset, batch_size=batch_size, shuffle=False, num_workers=2
     )
 
-    # todo
-    x_train_var = 1.0472832505104722e-05
+    x_train_var = compute_dataset_variance(train_loader)
 
     return train_loader, val_loader, x_train_var
 
