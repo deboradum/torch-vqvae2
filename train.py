@@ -92,8 +92,8 @@ def train(
     log_every=100,
     save_every=1,
 ):
-    s = time.perf_counter()
     for epoch in range(epochs):
+        s = time.perf_counter()
         metrics = {"total_loss": [], "recon_loss": [], "perplexity": []}
         net.train(True)
         for i, (X, _) in enumerate(train_loader):
