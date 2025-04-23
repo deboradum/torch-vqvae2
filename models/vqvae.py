@@ -77,7 +77,8 @@ class VQVAE2(nn.Module):
             top_loss,
             btm_loss,
             perplexity,
-            torch.cat([btm_embeddings, top_embeddings], dim=1),
+            # torch.cat([btm_embeddings, top_embeddings], dim=1),
+            top_embeddings,
         )
 
 
